@@ -3,7 +3,9 @@ Implementation of LearningToSimplify
 
 # Environment
 Python 3.5
+
 Tensorflow 1.9
+
 Keras 2.2
 
 # Training Data
