@@ -43,16 +43,16 @@ class BatchNorm(KL.BatchNormalization):
         return super(self.__class__, self).call(inputs, training=training)
 
 def mold_image_a(images, config):
-    return (images.astype(np.float32) - config.MEAN_PIXEL_A) / 127.0
+    return images.astype(np.float32) / 255.0
 def mold_image_b(images, config):
-    return (images.astype(np.float32) - config.MEAN_PIXEL_B) / 127.0
+    return images.astype(np.float32) / 255.0
 
 def unmold_image_a(normalized_images, config):
     """Takes a image normalized with mold() and returns the original."""
-    return (normalized_images * 127.0 + config.MEAN_PIXEL_A).astype(np.uint8)
+    return (normalized_images * 255.0).astype(np.uint8)
 def unmold_image_b(normalized_images, config):
     """Takes a image normalized with mold() and returns the original."""
-    return (normalized_images * 127.0 + config.MEAN_PIXEL_B).astype(np.uint8)
+    return (normalized_images * 255.0).astype(np.uint8)
 
 def random_crop(image_A, image_B, crop_height, crop_width):
     if (crop_width <= image_A.shape[1]) and (crop_height <= image_A.shape[0]):

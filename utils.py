@@ -11,10 +11,10 @@ import warnings
 
 def unmold_image_a(normalized_images, mean_pixel=np.array([123.0, 123.0, 123.0])):
     """Takes a image normalized with mold() and returns the original."""
-    return (normalized_images * 127.0 + mean_pixel).astype(np.uint8)
+    return (normalized_images * 255.0).astype(np.uint8)
 def unmold_image_b(normalized_images, mean_pixel=np.array([123.0])):
     """Takes a image normalized with mold() and returns the original."""
-    return (normalized_images * 127.0 + mean_pixel).astype(np.uint8)
+    return (normalized_images * 255.0).astype(np.uint8)
 
 def resize_image(image, min_dim=None, max_dim=None, padding=False):
     """
