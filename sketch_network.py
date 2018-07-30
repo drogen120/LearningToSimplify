@@ -391,7 +391,7 @@ class SketchNet():
             keras.callbacks.ModelCheckpoint(self.checkpoint_path,
                                            period=10,
                                            verbose=0, save_weights_only=True),
-            vis_training_image
+            # vis_training_image
         ]
 
         # Train
