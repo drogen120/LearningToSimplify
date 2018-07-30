@@ -21,8 +21,8 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 class SketchConfig(Config):
     NAME = "Sketch"
     TRAIN_BN = True
-    STEPS_PER_EPOCH = 30
-    VALIDATION_STEPS = 1
+    STEPS_PER_EPOCH = 100
+    VALIDATION_STEPS = 4
 
 if __name__ == '__main__':
     import argparse

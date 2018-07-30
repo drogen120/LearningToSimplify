@@ -381,7 +381,11 @@ class SketchNet():
                                          shuffle=True,
                                          augmentation=augmentation,
                                          batch_size=self.config.BATCH_SIZE)
-        vis_training_image = Sketch_Evaluator(val_generator,
+        vis_generator = data_generator(val_dataset, self.config,
+                                         shuffle=True,
+                                         augmentation=augmentation,
+                                         batch_size=self.config.BATCH_SIZE)
+        vis_training_image = Sketch_Evaluator(vis_generator,
                                              self.log_dir+"/visual/")
 
         callbacks = [
@@ -391,7 +395,7 @@ class SketchNet():
             keras.callbacks.ModelCheckpoint(self.checkpoint_path,
                                            period=10,
                                            verbose=0, save_weights_only=True),
-            # vis_training_image
+            vis_training_image,
         ]
 
         # Train
