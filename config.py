@@ -26,12 +26,15 @@ class Config(object):
     LEARNING_MOMENTUM = 0.9
     TRAIN_BN = False
     # Network architecture
-    NETWORK_PARM =[
+    NETWORK_PARM_FEATURE = [
         # kernel,stride,filter_num
         [5, 2, 48],
         [3, 1, 128],
         [3, 1, 128],
         [3, 2, 256],
+    ]
+    NETWORK_PARM =[
+        # kernel,stride,filter_num
         [3, 1, 256],
         [3, 1, 256],
         [3, 2, 256],

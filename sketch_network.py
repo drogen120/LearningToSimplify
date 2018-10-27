@@ -148,15 +148,37 @@ def data_generator(dataset, config, shuffle=True, augmentation=None, batch_size=
             if error_count > 5:
                 raise
 
-def build_sketchnet_graph(input_image, network_parameter, use_bias = True, train_bn=True):
+def build_sketchnet_graph(input_image_front, input_image_right, input_image_left,
+                          input_image_up, input_image_downn,
+                          feature_network_parameter, network_parameter, use_bias = True, train_bn=True):
 
-    x = KL.Conv2D(network_parameter[0][2], 
-                  (network_parameter[0][0],network_parameter[0][0]),
-                  strides=(network_parameter[0][1],network_parameter[0][1]),
-                  padding='same', use_bias=use_bias, name='Sketch_conv_input')(input_image)
-    x = BatchNorm(name='Sketch_bn_conv_input' )(x, training=train_bn)
-    x = KL.Activation('relu')(x)
-    for index, conv_layer_para in enumerate(network_parameter[1:-1]):
+    name_list = ["front", "right", "left", "up", "down"]
+    input_list = [input_image_front, input_image_right, input_image_left,
+                          input_image_up, input_image_down]
+    feature_list = []
+    for (input_tensor, input_name) in zip(input_list, name_list):
+        feature_output = KL.Conv2D(feature_network_parameter[0][2], 
+                      (feature_network_parameter[0][0],feature_network_parameter[0][0]),
+                      strides=(network_parameter[0][1],feature_network_parameter[0][1]),
+                      padding='same', use_bias=use_bias,
+                      name='Sketch_conv_input_' + input_name)(input_tensor)
+        feature_output = BatchNorm(name='Sketch_bn_conv_input_' + input_name)(feature_output, training=train_bn)
+        feature_output = KL.Activation('relu')(feature_output)
+        for index, conv_layer_para in enumerate(feature_network_parameter[1:]):
+            kernel_size, stride_step, filter_num = conv_layer_para
+            feature_output = KL.Conv2D(filter_num, (kernel_size,kernel_size),
+                          strides=(stride_step,stride_step),
+                          padding='same', use_bias=use_bias,
+                          name='Sketch_conv_'+ input_name + str(index))(feature_output)
+            feature_output = BatchNorm(name='Sketch_bn_' + input_name +
+                                       str(index))(feature_output, training=train_bn)
+            feature_output = KL.Activation('relu' + input_name + str(index))(feature_output)
+
+        feature_list.append(feature_output)
+
+    x = KL.Concatenate()(feature_list)
+
+    for index, conv_layer_para in enumerate(network_parameter[:-1]):
         kernel_size, stride_step, filter_num = conv_layer_para
 
         if stride_step >= 1:
@@ -172,14 +194,12 @@ def build_sketchnet_graph(input_image, network_parameter, use_bias = True, train
         x = BatchNorm(name='Sketch_bn_' + str(index))(x, training=train_bn)
         x = KL.Activation('relu')(x)
 
-
     kernel_size, stride_step, filter_num = network_parameter[-1]
     output_image = KL.Conv2D(filter_num, (kernel_size,kernel_size),
                   strides=(stride_step,stride_step),
                   padding='same', use_bias=use_bias, name='Sketch_output')(x)
 
     return output_image
-
 
 class SketchNet():
     def __init__(self, mode, config, model_dir):
@@ -195,24 +215,47 @@ class SketchNet():
     def build(self, mode, config):
         assert mode in ['training', 'inference']
 
-        input_image = KL.Input(
-            shape = config.IMAGE_SHAPE.tolist(), name="input_image"
+        input_image_front = KL.Input(
+            shape = config.IMAGE_SHAPE.tolist(), name="input_image_front"
         )
-
+        input_image_right = KL.Input(
+            shape = config.IMAGE_SHAPE.tolist(), name="input_image_right"
+        )
+        input_image_left = KL.Input(
+            shape = config.IMAGE_SHAPE.tolist(), name="input_image_left"
+        )
+        input_image_up = KL.Input(
+            shape = config.IMAGE_SHAPE.tolist(), name="input_image_up"
+        )
+        input_image_down = KL.Input(
+            shape = config.IMAGE_SHAPE.tolist(), name="input_image_down"
+        )
         if mode == 'training':
-            output_image = build_sketchnet_graph(input_image,
+            output_image = build_sketchnet_graph(input_image_front,
+                                                 input_image_right,
+                                                 input_image_left,
+                                                 input_image_up,
+                                                 input_image_down,
+                                                 config.NETWORK_PARM_FEATURE,
                                                  config.NETWORK_PARM,
                                                  config.TRAIN_BN)
-            inputs = input_image
+            inputs = [input_image_front, input_image_right, input_image_left,
+                      input_image_up, input_image_down]
             outputs = output_image
 
             model = KM.Model(inputs, outputs, name='SketchNet')
             model.summary()
         else:
-            output_image = build_sketchnet_graph(input_image,
+            output_image = build_sketchnet_graph(input_image_front,
+                                                 input_image_right,
+                                                 input_image_left,
+                                                 input_image_up,
+                                                 input_image_down,
+                                                 config.NETWORK_PARM_FEATURE,
                                                  config.NETWORK_PARM,
                                                  config.TRAIN_BN)
-            inputs = input_image
+            inputs = [input_image_front, input_image_right, input_image_left,
+                      input_image_up, input_image_down]
             outputs = output_image
 
             model = KM.Model(inputs, outputs, name='SketchNet')
