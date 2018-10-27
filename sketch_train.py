@@ -61,11 +61,11 @@ if __name__ == '__main__':
     dataset_val.prepare()
 
     augmentation = imgaug.augmenters.Sometimes(0.5, [
-    imgaug.augmenters.Fliplr(0.5),
-    imgaug.augmenters.Flipud(0.5),
+    # imgaug.augmenters.Fliplr(0.5),
+    # imgaug.augmenters.Flipud(0.5),
     imgaug.augmenters.Sometimes(0.5, imgaug.augmenters.Affine(
         scale={"x":(0.8,1.2), "y":(0.8, 1.2)},
-        rotate=(-90, 90)))
+        ))
     ])
 
     model.train(dataset_train, dataset_val, learning_rate = 0.001,
