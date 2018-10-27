@@ -21,7 +21,7 @@ DEFAULT_LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 class SketchConfig(Config):
     NAME = "Sketch"
     TRAIN_BN = True
-    STEPS_PER_EPOCH = 100
+    STEPS_PER_EPOCH = 2000
     VALIDATION_STEPS = 4
 
 if __name__ == '__main__':
@@ -69,5 +69,5 @@ if __name__ == '__main__':
     ])
 
     model.train(dataset_train, dataset_val, learning_rate = 0.001,
-                   epochs = 400, layers = 'all', augmentation=augmentation)
+                   epochs = 4000, layers = 'all', augmentation=augmentation)
 

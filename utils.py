@@ -94,15 +94,15 @@ class Sketch_Evaluator(keras.callbacks.Callback):
         return
 
     def on_epoch_begin(self, epoch, logs={}):
-        self.image_a = None
-        self.image_b = None
+        self.image_front = None
+        self.image_linedrawing = None
         self.image_pred = None
 
     def on_epoch_end(self, epoch, logs={}):
-        val_image_a, val_image_b = next(self.data_gen)
-        image_pred = self.model.predict(val_image_a)
-        self.image_a = unmold_image_a(val_image_a[0,:,:,:])
-        self.image_b = unmold_image_b(val_image_b[0,:,:,:])
+        [val_image_front, val_image_right, val_image_left, val_image_up, val_image_down], val_image_linedrawing = next(self.data_gen)
+        image_pred = self.model.predict([val_image_front, val_image_right, val_image_left, val_image_up, val_image_down])
+        self.image_front = unmold_image_a(val_image_front[0,:,:,:])
+        self.image_linedrawing = unmold_image_b(val_image_linedrawing[0,:,:,:])
         # self.image_b = val_gt_mask[0,:,:].astype(np.float32)
         self.image_pred = unmold_image_b(image_pred[0,:,:,:])
         self.log_result_tensorboard(epoch)
@@ -120,10 +120,10 @@ class Sketch_Evaluator(keras.callbacks.Callback):
                 os.mkdir(image_folder)
             
             print("image folder:", image_folder)
-            cv2.imwrite(image_folder+"image_a_"+str(epoch)+".jpg",
-                        self.image_a)
-            cv2.imwrite(image_folder+"image_b_"+str(epoch)+".jpg",
-                        self.image_b)
+            cv2.imwrite(image_folder+"image_front_"+str(epoch)+".jpg",
+                        self.image_front)
+            cv2.imwrite(image_folder+"image_gt_"+str(epoch)+".jpg",
+                        self.image_linedrawing)
             cv2.imwrite(image_folder+"image_pred_"+str(epoch)+".jpg",
                         self.image_pred)
             # logger = Logger(self.log_dir)

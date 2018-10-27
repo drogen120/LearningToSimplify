@@ -67,7 +67,7 @@ class Sketch_Dataset(object):
         return image_front, image_right, image_left, image_up, image_down, image_linedrawing
 
     def prepare(self):
-        assert len(self.imageA_list) == len(self.imageB_list), \
+        assert len(self.image_front_list) == len(self.image_linedrawing_list), \
                 "number of imageA_list is not equal to imageB_list."
 
         self.num_images = len(self.image_front_list)

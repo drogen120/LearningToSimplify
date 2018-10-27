@@ -54,23 +54,30 @@ def unmold_image_b(normalized_images, config):
     """Takes a image normalized with mold() and returns the original."""
     return (normalized_images * 255.0).astype(np.uint8)
 
-def random_crop(image_A, image_B, crop_height, crop_width):
+def random_crop(image_A, image_B ,image_C ,image_D, image_E, image_F, crop_height, crop_width):
     if (crop_width <= image_A.shape[1]) and (crop_height <= image_A.shape[0]):
         x = np.random.randint(0, image_A.shape[1]-crop_width)
         y = np.random.randint(0, image_A.shape[0]-crop_height)
-        return image_A[y:y+crop_height, x:x+crop_width, :], image_B[y:y+crop_height, x:x+crop_width, :]
+        return image_A[y:y+crop_height, x:x+crop_width, :], image_B[y:y+crop_height, x:x+crop_width, :], \
+               image_C[y:y+crop_height, x:x+crop_width, :], image_D[y:y+crop_height, x:x+crop_width, :], \
+               image_E[y:y+crop_height, x:x+crop_width, :], image_F[y:y+crop_height, x:x+crop_width, :]
+
     else:
         raise Exception('Crop shape exceeds image dimensions!')
 
 def load_image_AB(dataset, config, image_id, augmentation=None):
-    image_a, image_b = dataset.load_image_gt(image_id)
-    image_a, window, scale, padding = utils.resize_image(
-        image_a,
+    image_front, image_right, image_left, image_up, image_down, image_linedrawing = dataset.load_image_gt(image_id)
+    image_front, window, scale, padding = utils.resize_image(
+        image_front,
         min_dim=config.IMAGE_MIN_DIM,
         max_dim=config.IMAGE_MAX_DIM,
         padding=config.IMAGE_PADDING)
 
-    image_b = utils.resize_image_b(image_b, scale, padding)
+    image_right = utils.resize_image_b(image_right, scale, padding)
+    image_left = utils.resize_image_b(image_left, scale, padding)
+    image_up = utils.resize_image_b(image_up, scale, padding)
+    image_down = utils.resize_image_b(image_down, scale, padding)
+    image_linedrawing = utils.resize_image_b(image_linedrawing, scale, padding)
 
     if augmentation:
         import imgaug
@@ -83,19 +90,31 @@ def load_image_AB(dataset, config, image_id, augmentation=None):
             return (augmenter.__class__.__name__ in MASK_AUGMENTERS)
 
         # Store shapes before augmentation to compare
-        image_a_shape = image_a.shape
-        image_b_shape = image_b.shape
+        image_front_shape = image_front.shape
+        image_right_shape = image_right.shape
+        image_left_shape = image_left.shape
+        image_up_shape = image_up.shape
+        image_down_shape = image_down.shape
+        image_linedrawing_shape = image_linedrawing.shape
         # Make augmenters deterministic to apply similarly to images and masks
         det = augmentation.to_deterministic()
-        image_a = det.augment_image(image_a.astype(np.uint8))
+        image_front = det.augment_image(image_front.astype(np.uint8))
+        image_right = det.augment_image(image_right.astype(np.uint8))
+        image_left = det.augment_image(image_left.astype(np.uint8))
+        image_up = det.augment_image(image_up.astype(np.uint8))
+        image_down= det.augment_image(image_down.astype(np.uint8))
         # Change mask to np.uint8 because imgaug doesn't support np.bool
-        image_b = det.augment_image(image_b.astype(np.uint8),
+        image_linedrawing = det.augment_image(image_linedrawing.astype(np.uint8),
                                  hooks=imgaug.HooksImages(activator=hook))
         # Verify that shapes didn't change
-        assert image_a.shape == image_a_shape, "Augmentation shouldn't change image size"
-        assert image_b.shape == image_b_shape, "Augmentation shouldn't change image size"
+        assert image_front_shape == image_front.shape, "Augmentation shouldn't change image size"
+        assert image_right_shape ==  image_right.shape, "Augmentation shouldn't change image size"
+        assert image_left_shape ==  image_left.shape, "Augmentation shouldn't change image size"
+        assert image_up_shape ==  image_up.shape, "Augmentation shouldn't change image size"
+        assert image_down_shape ==  image_down.shape, "Augmentation shouldn't change image size"
+        assert image_linedrawing_shape ==  image_linedrawing.shape, "Augmentation shouldn't change image size"
 
-    return image_a, image_b
+    return image_front, image_right, image_left, image_up, image_down, image_linedrawing 
 
 def data_generator(dataset, config, shuffle=True, augmentation=None, batch_size=1):
     if dataset is None:
@@ -113,27 +132,40 @@ def data_generator(dataset, config, shuffle=True, augmentation=None, batch_size=
                 np.random.shuffle(image_ids)
 
             image_id = image_ids[image_index]
-            image_a, image_b = load_image_AB(dataset, config, image_id,
-                                             augmentation=augmentation)
+            image_front, image_right, image_left, image_up, image_down, image_linedrawing \
+                = load_image_AB(dataset, config, image_id, augmentation=augmentation)
 
-            image_a, image_b = random_crop(image_a, image_b,
+            image_front, image_right, image_left, image_up, image_down, image_linedrawing \
+                = random_crop(image_front, image_right, image_left, image_up, image_down, image_linedrawing, 
                                            config.IMAGE_MIN_DIM, config.IMAGE_MIN_DIM)
 
             if b == 0:
-                batch_images_a = np.zeros(
-                    (batch_size,) + image_a.shape, dtype=np.float32)
+                batch_images_front = np.zeros(
+                    (batch_size,) + image_front.shape, dtype=np.float32)
 
-                batch_images_b = np.zeros(
-                    (batch_size,) + image_b.shape, dtype=np.float32)
+                batch_images_right = np.zeros(
+                    (batch_size,) + image_right.shape, dtype=np.float32)
+                batch_images_left = np.zeros(
+                    (batch_size,) + image_left.shape, dtype=np.float32)
+                batch_images_up = np.zeros(
+                    (batch_size,) + image_up.shape, dtype=np.float32)
+                batch_images_down = np.zeros(
+                    (batch_size,) + image_down.shape, dtype=np.float32)
+                batch_images_linedrawing = np.zeros(
+                    (batch_size,) + image_linedrawing.shape, dtype=np.float32)
 
-            batch_images_a[b] = mold_image_a(image_a.astype(np.float32), config)
-            batch_images_b[b] = mold_image_b(image_b.astype(np.float32), config)
+            batch_images_front[b] = mold_image_a(image_front.astype(np.float32), config)
+            batch_images_right[b] = mold_image_a(image_right.astype(np.float32), config)
+            batch_images_left[b] = mold_image_a(image_left.astype(np.float32), config)
+            batch_images_up[b] = mold_image_a(image_up.astype(np.float32), config)
+            batch_images_down[b] = mold_image_a(image_down.astype(np.float32), config)
+            batch_images_linedrawing[b] = mold_image_b(image_linedrawing.astype(np.float32), config)
 
             b += 1
 
             if b >= batch_size:
-                inputs = batch_images_a
-                outputs = batch_images_b
+                inputs = [batch_images_front, batch_images_right, batch_images_left, batch_images_up, batch_images_down]
+                outputs = batch_images_linedrawing
 
                 yield inputs, outputs
 
@@ -149,7 +181,7 @@ def data_generator(dataset, config, shuffle=True, augmentation=None, batch_size=
                 raise
 
 def build_sketchnet_graph(input_image_front, input_image_right, input_image_left,
-                          input_image_up, input_image_downn,
+                          input_image_up, input_image_down,
                           feature_network_parameter, network_parameter, use_bias = True, train_bn=True):
 
     name_list = ["front", "right", "left", "up", "down"]
@@ -159,7 +191,7 @@ def build_sketchnet_graph(input_image_front, input_image_right, input_image_left
     for (input_tensor, input_name) in zip(input_list, name_list):
         feature_output = KL.Conv2D(feature_network_parameter[0][2], 
                       (feature_network_parameter[0][0],feature_network_parameter[0][0]),
-                      strides=(network_parameter[0][1],feature_network_parameter[0][1]),
+                      strides=(feature_network_parameter[0][1],feature_network_parameter[0][1]),
                       padding='same', use_bias=use_bias,
                       name='Sketch_conv_input_' + input_name)(input_tensor)
         feature_output = BatchNorm(name='Sketch_bn_conv_input_' + input_name)(feature_output, training=train_bn)
@@ -172,7 +204,7 @@ def build_sketchnet_graph(input_image_front, input_image_right, input_image_left
                           name='Sketch_conv_'+ input_name + str(index))(feature_output)
             feature_output = BatchNorm(name='Sketch_bn_' + input_name +
                                        str(index))(feature_output, training=train_bn)
-            feature_output = KL.Activation('relu' + input_name + str(index))(feature_output)
+            feature_output = KL.Activation('relu')(feature_output)
 
         feature_list.append(feature_output)
 
