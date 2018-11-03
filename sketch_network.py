@@ -47,6 +47,13 @@ def mold_image_a(images, config):
 def mold_image_b(images, config):
     return images.astype(np.float32) / 255.0
 
+def mold_images(images):
+    result_images = []
+    for image in images:
+        result_images.append(image.astype(np.float32) / 255.0)
+
+    return result_images
+
 def unmold_image_a(normalized_images, config):
     """Takes a image normalized with mold() and returns the original."""
     return (normalized_images * 255.0).astype(np.uint8)
@@ -516,6 +523,34 @@ class SketchNet():
             if l.get_weights():
                 layers.append(l)
         return layers
+
+    def predict(self, images, verbose=0):
+        """Runs the detection pipeline.
+
+        images: List of images, potentially of different sizes.
+
+        Returns a list of images
+        """
+        assert self.mode == "inference", "Create model in inference mode."
+        assert len(
+            images) == self.config.BATCH_SIZE, "len(images) must be equal to BATCH_SIZE"
+
+        if verbose:
+            log("Processing {} images".format(len(images)))
+            for image in images:
+                log("image", image)
+        # Mold inputs to format expected by the neural network
+        molded_images = self.mold_images(images)
+        if verbose:
+            log("molded_images", molded_images)
+        # Run predict
+        result_images = self.keras_model.predict([molded_images], verbose=0)
+        # Process detections
+        results = []
+        for i, image in enumerate(result_images):
+
+            results.append(self.unmold_image_b(image))
+        return results
 
 if __name__ == '__main__':
     print("Sketch_network")
