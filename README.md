@@ -20,10 +20,20 @@ Data
 |-- train
 
 
-|   |-- groupa
+|   |-- front
 
 
-|   |-- groupb
+|   |-- right
+
+
+|-- test
+
+
+|   |-- front
+
+
+|   |-- right
+
 
 # Training
 
